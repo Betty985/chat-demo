@@ -71,7 +71,19 @@
 </body>
 <script src="/socket.io/socket.io.js"></script>
 <script>
+    // 生成随机ID https://segmentfault.com/a/1190000039225617
+    function GenNonDuplicateID(randomLength){
+  return Number(Math.random().toString().substr(2,randomLength) + Date.now()).toString(36)
+}
     const socket=io()
+    let user=new Proxy({
+        id:GenNonDuplicateID(),
+        nickName:'1221',
+        addTime:Date.now()
+    },{})
+    let userList=new Proxy({
+        list:[]
+    },{})
     const $=(el)=>document.querySelector(el)
     const form=$('#form'),input=$('#input'),messages=$('#messages')
     form.addEventListener('submit',(e)=>{
@@ -87,5 +99,18 @@
         messages.appendChild(item)
         window.scrollTo(0,document.body.scrollHeight)
     })
+    socket.on('connect',()=>{
+        socket.emit('add user',user)
+    })
+    //客户端监听用户进入聊天室
+    socket.on('user joined',({id,nickName})=>{
+        console.log(id)
+        alert(`${nickName} 进入,id ${id}`)
+// userList.list.push(user)
+    })
+    //客户端监听用户离开聊天室
+    socket.on("user leave", function ({id,nickName}) {
+        alert(`${nickName} 离开,id ${id}`)
+    });
 </script>
 </html>
