@@ -12,7 +12,13 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Helvetica, Arial, sans-serif;
       }
-
+      #container {
+        display: flex;
+        width: 100%;
+      }
+      #left {
+        width: 60%;
+      }
       #form {
         background: rgba(0, 0, 0, 0.15);
         padding: 0.25rem;
@@ -48,7 +54,8 @@
         color: #fff;
       }
 
-      #messages {
+      #messages,
+      #online {
         list-style-type: none;
         margin: 0;
         padding: 0;
@@ -58,47 +65,194 @@
         padding: 0.5rem 1rem;
       }
 
-      #messages > li:nth-child(odd) {
+      #messages > li:nth-child(odd),
+      #online > li:nth-child(even) {
         background: #efefef;
+      }
+      #online {
+        width: 40%;
+        background: #fdf5fc;
       }
     </style>
   </head>
   <body>
     <p id="msg"></p>
-    <ul id="messages"></ul>
-    <form action="" id="form">
-      <input type="text" id="input" />
-      <button>Send</button>
-    </form>
+    <div id="container">
+      <div id="left">
+        <ul id="messages"></ul>
+        <form action="" id="form">
+          <input type="text" id="input" />
+          <button>Send</button>
+        </form>
+      </div>
+      <ul id="online">
+        <li>在线成员：</li>
+      </ul>
+    </div>
   </body>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const names = [
+      "子璇",
+      "淼",
+      "国栋",
+      "夫子",
+      "瑞堂",
+      "甜",
+      "敏",
+      "尚",
+      "国贤",
+      "贺祥",
+      "晨涛",
+      "昊轩",
+      "易轩",
+      "益辰",
+      "益帆",
+      "益冉",
+      "瑾春",
+      "瑾昆",
+      "春齐",
+      "杨",
+      "文昊",
+      "东东",
+      "雄霖",
+      "浩晨",
+      "熙涵",
+      "溶溶",
+      "冰枫",
+      "欣欣",
+      "宜豪",
+      "欣慧",
+      "建政",
+      "美欣",
+      "淑慧",
+      "文轩",
+      "文杰",
+      "欣源",
+      "忠林",
+      "榕润",
+      "欣汝",
+      "慧嘉",
+      "新建",
+      "建林",
+      "亦菲",
+      "林",
+      "冰洁",
+      "佳欣",
+      "涵涵",
+      "禹辰",
+      "淳美",
+      "泽惠",
+      "伟洋",
+      "涵越",
+      "润丽",
+      "翔",
+      "淑华",
+      "晶莹",
+      "凌晶",
+      "苒溪",
+      "雨涵",
+      "嘉怡",
+      "佳毅",
+      "子辰",
+      "佳琪",
+      "紫轩",
+      "瑞辰",
+      "昕蕊",
+      "萌",
+      "明远",
+      "欣宜",
+      "泽远",
+      "欣怡",
+      "佳怡",
+      "佳惠",
+      "晨茜",
+      "晨璐",
+      "运昊",
+      "汝鑫",
+      "淑君",
+      "晶滢",
+      "润莎",
+      "榕汕",
+      "佳钰",
+      "佳玉",
+      "晓庆",
+      "一鸣",
+      "语晨",
+      "添池",
+      "添昊",
+      "雨泽",
+      "雅晗",
+      "雅涵",
+      "清妍",
+      "诗悦",
+      "嘉乐",
+      "晨涵",
+      "天赫",
+      "玥傲",
+      "佳昊",
+      "天昊",
+      "萌萌",
+      "若萌",
+      "秋白",
+      "南风",
+      "醉山",
+      "初彤",
+      "凝海",
+      "紫文",
+      "凌晴",
+      "香卉",
+      "雅琴",
+      "傲安",
+    ];
     // 生成随机ID https://segmentfault.com/a/1190000039225617
     function GenNonDuplicateID(randomLength) {
       return Number(
         Math.random().toString().substr(2, randomLength) + Date.now()
       ).toString(36);
     }
+    // 生成随机数
+    function getRandomInt(min, max) {
+      min = Math.ceil(min);
+      max = Math.floor(max);
+      return Math.floor(Math.random() * (max - min)) + min; //不含最大值，含最小值
+    }
+    // 生成随机昵称
+    function GenName() {
+      const index = getRandomInt(0, 111);
+      return names[index];
+    }
     const socket = io();
-    let user = new Proxy(
-      {
+    let user;
+    if (window.location.search === "") {
+      user = {
         id: GenNonDuplicateID(),
-        nickName: "1221",
+        nickName: GenName(),
         addTime: Date.now(),
-      },
-      {}
-    );
-    let userList = new Proxy(
-      {
-        list: [],
-      },
-      {}
-    );
+      };
+      window.location.search = `id=${user.id}&nickName=${user.nickName}`;
+    } else {
+      user = new (function (sSearch) {
+        if (sSearch.length > 1) {
+          for (
+            let aItKey, nKeyId = 0, aCouples = sSearch.substr(1).split("&");
+            nKeyId < aCouples.length;
+            nKeyId++
+          ) {
+            aItKey = aCouples[nKeyId].split("=");
+            this[decodeURIComponent(aItKey[0])] =
+              aItKey.length > 1 ? decodeURIComponent(aItKey[1]) : "";
+          }
+        }
+      })(window.location.search);
+    }
+    let userList = sessionStorage.getItem("users") ?? new Map();
     const $ = (el) => document.querySelector(el);
     const form = $("#form"),
       input = $("#input"),
       messages = $("#messages"),
-      p = $("#msg");
+      p = $("#msg"),
+      online = $("#online");
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       if (input.value) {
@@ -114,7 +268,7 @@
       p.innerText = ``;
     });
     socket.on("focus", (user) => {
-        console.log(`${user.nickName} 正在输入...`)
+      console.log(`${user.nickName} 正在输入...`);
       p.innerText = `${user.nickName} 正在输入...`;
     });
     socket.on("chat message", (msg) => {
@@ -128,13 +282,29 @@
     });
     //客户端监听用户进入聊天室
     socket.on("user joined", ({ id, nickName }) => {
-      console.log(id);
+      userList.set(id, { id, nickName });
+      sessionStorage.setItem("users", userList);
       alert(`${nickName} 进入,id ${id}`);
+      online.innerHTML = "<li>在线成员：</li>";
+      for (let v of userList.values()) {
+        const item = document.createElement("li");
+        item.textContent = v.nickName;
+        online.appendChild(item);
+      }
+      window.scrollTo(0, document.body.scrollHeight);
       // userList.list.push(user)
     });
     //客户端监听用户离开聊天室
     socket.on("user leave", function ({ id, nickName }) {
+      userList.delete(id);
+      sessionStorage.setItem("users", userList);
       alert(`${nickName} 离开,id ${id}`);
+      online.innerHTML = "<li>在线成员：</li>";
+      for (let v of userList.values()) {
+        const item = document.createElement("li");
+        item.textContent = v.nickName;
+        online.appendChild(item);
+      }
     });
   </script>
 </html>
