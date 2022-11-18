@@ -17,9 +17,11 @@ io.on('connection',(socket)=>{
     sessionList.set(id,nickName)
     io.emit('user joined',{id,nickName})
    })
-
+   socket.on('focus',user=>{
+    io.emit('focus',user)
+   })
     socket.on('chat message',(msg)=>{
-        io.emit('chat message',msg)
+        socket.broadcast.emit('chat message',msg)
         console.log('message:'+msg)
     })
     socket.on('disconnect',()=>{
