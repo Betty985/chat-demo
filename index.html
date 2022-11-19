@@ -6,9 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Socket.IO chat</title>
     <style>
-      body {
+      * {
         margin: 0;
-        padding-bottom: 3rem;
+        padding: 0;
+        border: 0;
+        /* padding-bottom: 3rem; */
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           Helvetica, Arial, sans-serif;
       }
@@ -17,7 +19,9 @@
         width: 100%;
       }
       #left {
-        width: 60%;
+        width: 40vw;
+        z-index: 1;
+        border: 1px solid rgb(226, 238, 232);
       }
       #form {
         background: rgba(0, 0, 0, 0.15);
@@ -56,6 +60,7 @@
 
       #messages,
       #online {
+        width: 40vw;
         list-style-type: none;
         margin: 0;
         padding: 0;
@@ -70,13 +75,25 @@
         background: #efefef;
       }
       #online {
-        width: 40%;
-        background: #fdf5fc;
+        background-color: #fff;
+        position: relative;
+        z-index: 9;
+        border-radius: 8px;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 3px #fff;
+      }
+      .mask {
+        position: fixed;
+        width: 100vw;
+        height: 80vh;
+        background-color: rgba(104, 104, 104, 0.354);
+        z-index: 2;
       }
     </style>
   </head>
   <body>
-    <p id="msg"></p>
+    <div class="mask"></div>
+    <p id="tip"></p>
     <div id="container">
       <div id="left">
         <ul id="messages"></ul>
@@ -85,9 +102,11 @@
           <button>Send</button>
         </form>
       </div>
-      <ul id="online">
-        <li>在线成员：</li>
-      </ul>
+      <div id="right">
+        <ul id="online">
+          <li>在线成员：</li>
+        </ul>
+      </div>
     </div>
   </body>
   <script src="/socket.io/socket.io.js"></script>
@@ -246,13 +265,23 @@
         }
       })(window.location.search);
     }
-    let userList = sessionStorage.getItem("users") ?? new Map();
     const $ = (el) => document.querySelector(el);
     const form = $("#form"),
       input = $("#input"),
       messages = $("#messages"),
-      p = $("#msg"),
+      p = $("#tip"),
       online = $("#online");
+    // {
+    //   const { left, top, right, bottom, x, y } = online.getBoundingClientRect();
+
+    //   let css =
+    //     "z-index:999;border-style: solid; border-color: rgba(102, 102, 102, 0.3);";
+    //   css += `border-width:${
+    //     y / top
+    //   }px calc(100vw - ${right}px) calc(100vh - ${bottom}px) ${x / left}px`;
+    //   online.style.cssText += css;
+    //   console.log(online.style.cssText);
+    // }
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       if (input.value) {
@@ -281,26 +310,22 @@
       socket.emit("add user", user);
     });
     //客户端监听用户进入聊天室
-    socket.on("user joined", ({ id, nickName }) => {
-      userList.set(id, { id, nickName });
-      sessionStorage.setItem("users", userList);
+    socket.on("user joined", ({ id, nickName, sessionList }) => {
       alert(`${nickName} 进入,id ${id}`);
       online.innerHTML = "<li>在线成员：</li>";
-      for (let v of userList.values()) {
+      console.log(sessionList);
+      for (let v of sessionList) {
         const item = document.createElement("li");
         item.textContent = v.nickName;
         online.appendChild(item);
       }
       window.scrollTo(0, document.body.scrollHeight);
-      // userList.list.push(user)
     });
     //客户端监听用户离开聊天室
-    socket.on("user leave", function ({ id, nickName }) {
-      userList.delete(id);
-      sessionStorage.setItem("users", userList);
+    socket.on("user leave", function ({ id, nickName, sessionList }) {
       alert(`${nickName} 离开,id ${id}`);
       online.innerHTML = "<li>在线成员：</li>";
-      for (let v of userList.values()) {
+      for (let v of sessionList) {
         const item = document.createElement("li");
         item.textContent = v.nickName;
         online.appendChild(item);
